@@ -1,4 +1,4 @@
-var _ = require('underscore');
+var _ = require('lodash');
 var Step = require('step');
 var vows = require('vows');
 var assert = require('assert');
@@ -16,4 +16,3 @@ vows.describe('underscore-cli')
   }
 })
 .export(module);
-

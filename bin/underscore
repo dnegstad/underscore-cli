@@ -58,24 +58,25 @@ addExpressionOptions(program);
 var Command = program.Command;
 
 Command.prototype.commandHelp = function () {
-  var cmds = _(program.commands)
-    .reject(function (cmd) { return cmd.hidden; })
-    .map(function(cmd){
-      var args = _(cmd.args)
-        .map(function(arg){
-          return arg.required
-            ? '<' + arg.name.replace('expression', 'exp') + '>'
-            : (arg.name == 'command' ? '[' + arg.name + ']' : '');
-        })
-        .join(' ');
-        // DDOPSON-2012-10-22 - Commander.js changed the property from 'name' to '_name' somewhere between 0.6.1 and 1.0.5.  We use (cmd.name || cmd._name) to work with both versions.  Really, I hacked Commander so much I should just fork it and have my own version.
-      return [(cmd.name || cmd._name) + ' ' + args, cmd.description()];
-    });
+  var cmds = program.commands.filter(function(cmd) {
+    return !cmd.hidden;
+  }).map(function(cmd) {
+    var args = _(cmd.args)
+      .map(function(arg){
+        return arg.required
+          ? '<' + arg.name.replace('expression', 'exp') + '>'
+          : (arg.name == 'command' ? '[' + arg.name + ']' : '');
+      })
+      .join(' ');
+      // DDOPSON-2012-10-22 - Commander.js changed the property from 'name' to '_name' somewhere between 0.6.1 and 1.0.5.  We use (cmd.name || cmd._name) to work with both versions.  Really, I hacked Commander so much I should just fork it and have my own version.
 
-  var maxlen = _.max(_.map(cmds, function (cmd) { return cmd[0].length; }));
+    return [(cmd.name || cmd._name) + ' ' + args, cmd.description()];
+  });
 
-  return _.map(cmds, function (cmd) {
-    return _.sprintf('%-' + maxlen + 's %s', cmd[0], cmd[1]);
+  var maxlen = _.max(cmds.map(function (cmd) { return cmd[0].length; }));
+
+  return cmds.map(function (cmd) {
+    return _.string.sprintf('%-' + maxlen + 's %s', cmd[0], cmd[1]);
   }).join('\n');
 };
 
@@ -86,7 +87,7 @@ Command.prototype.examplesHelp = function () {
   if (!_.isArray(examples)) {
     examples = [examples];
   }
-  return _.map(examples, function (example) {
+  return examples.map(function (example) {
     if(example && example.cmd && example.result) {
       var cmd = example.cmd;
       var result = example.result;
@@ -121,7 +122,7 @@ Command.prototype.usage = function(str){
   var opts = _.reject(program.options, function (o) {
     return o.flags.match(/--in\b|--data|--nodata|--version/);
   });
-  var optsStr = '[--in <filename>|--data <JSON>|--nodata] ' + 
+  var optsStr = '[--in <filename>|--data <JSON>|--nodata] ' +
     _.compact(opts.map(function (o) {
       return '[' + o.flags.replace(/.*, */, '') + ']';
     })).join(' ');
@@ -345,7 +346,7 @@ var commands = {
     name: 'run <expression>',
     description: "Runs arbitrary JS code. Use for CLI Javascripting.",
     notes: ["Runs arbitrary JS code.  Note that globals like '_' and 'print' will still be defined."],
-    expr: ['data'], 
+    expr: ['data'],
     fn: function (data, userFn) {
       // 'data' is likely to be undefined
       return userFn(data);
@@ -786,7 +787,7 @@ function defineCommand (opts, name) {
 
 function main () {
   var argv = process.argv;
-  
+
   program.parse(argv);
   if (program.args.length === 0) {
     _.map(commands, defineCommand);
@@ -880,7 +881,7 @@ function getUserFn(expression, args) {
   }
 }
 
-function processData(fn) {  
+function processData(fn) {
   inputData(function(data) {
     try {
       var output = fn(data);
@@ -992,7 +993,7 @@ function outputData(data) {
     if (program.wrapwidth && typeof formatter.withConfig == 'function') {
       formatter = formatter.withConfig({wrapWidth: program.wrapwidth});
     }
-    
+
     var output;
     try {
       if (data === undefined && ! program.printUndefined) {
@@ -1027,4 +1028,3 @@ module.exports = program;
 if(module.parent === null) {
   main();
 }
-
